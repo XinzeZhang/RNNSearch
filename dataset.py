@@ -16,11 +16,11 @@ class dataset(torch.utils.data.Dataset):
                 lines.append(f.readlines())
         assert len(lines[0]) == len(lines[1])
         self.data = []
-        for line in itertools.izip_longest(*lines):
-            line = map(lambda v: v.lower().strip(), line)
+        for line in itertools.zip_longest(*lines):
+            line = list(map(lambda v: v.lower().strip(), line))
             if not any(line):
                 continue
-            line = map(lambda v: v.split(), line)
+            line = list(map(lambda v: v.split(), line))
             if (src_max_len and len(line[0]) > src_max_len) \
                     or (trg_max_len and len(line[1]) > trg_max_len):
                 continue

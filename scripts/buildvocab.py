@@ -1,7 +1,7 @@
 # buildvocab.py
 
 import argparse
-import cPickle
+import pickle
 import operator
 from collections import Counter
 
@@ -59,7 +59,7 @@ def save(name, voc):
         newvoc[v] = i
 
     fd = open(name, "wb")
-    cPickle.dump(newvoc, fd, cPickle.HIGHEST_PROTOCOL)
+    pickle.dump(newvoc, fd, pickle.HIGHEST_PROTOCOL)
     fd.close()
 
 
@@ -111,7 +111,7 @@ def create_dictionary(name, lim=0):
 
     vocab_count = combined_counter.most_common(lim - 4)
     total_counts = sum(combined_counter.values())
-    print 100.0 * sum([count for word, count in vocab_count]) / total_counts
+    print(100.0 * sum([count for word, count in vocab_count]) / total_counts)
 
     vocab = {"<unk>": 0, "<pad>": 1, "<sos>": 2, "<eos>": 3}
 
@@ -126,11 +126,14 @@ def parseargs():
     parser = argparse.ArgumentParser(description=msg)
 
     msg = "corpus"
-    parser.add_argument("--corpus", required=True, help=msg)
+    parser.add_argument("--corpus", default='./corpus/ldc/train.cn-en.zh', help=msg)
     msg = "output"
-    parser.add_argument("--output", required=True, help=msg)
+    parser.add_argument("--output", default='./corpus/ldc_data/zh.voc3.pkl', help=msg)
+    # parser.add_argument("--corpus", required=True, help=msg)
+    # msg = "output"
+    # parser.add_argument("--output", required=True, help=msg)
     msg = "limit"
-    parser.add_argument("--limit", default=0, type=int, help=msg)
+    parser.add_argument("--limit", default=30000, type=int, help=msg)
     msg = "character mode"
     parser.add_argument("--char", action="store_true", help=msg)
     msg = "sort by alphabet"
@@ -138,7 +141,8 @@ def parseargs():
     msg = "add token"
     parser.add_argument("--token", type=str, help=msg)
     msg = "compatible with groundhog"
-    parser.add_argument("--groundhog", action="store_true", help=msg)
+    parser.add_argument("--groundhog", default=True, help=msg)
+    # parser.add_argument("--groundhog", action="store_true", help=msg)
 
     return parser.parse_args()
 
@@ -160,7 +164,7 @@ def buildvocab(args):
 
     if args.limit != 0:
         vocab = vocab[:args.limit]
-        print "coverage: ", coverage(vocab, counts) * 100, "%"
+        print("coverage: ", coverage(vocab, counts) * 100, "%")
 
     if args.alpha:
         n = len(tokens)
@@ -175,7 +179,7 @@ if __name__ == "__main__":
     if args.groundhog:
         vocab = create_dictionary(args.corpus, args.limit)
         fd = open(args.output, "wb")
-        cPickle.dump(vocab, fd, cPickle.HIGHEST_PROTOCOL)
+        pickle.dump(vocab, fd, pickle.HIGHEST_PROTOCOL)
         fd.close()
     else:
         buildvocab(args)

@@ -1,4 +1,4 @@
-import cPickle
+import pickle
 
 import torch
 
@@ -33,21 +33,21 @@ def convert_str(batch, vocab):
 
 def invert_vocab(vocab):
     v = {}
-    for k, idx in vocab.iteritems():
+    for k, idx in vocab.items():
         v[idx] = k
     return v
 
 
 def load_vocab(path):
     f = open(path, 'rb')
-    vocab = cPickle.load(f)
+    vocab = pickle.load(f)
     f.close()
     return vocab
 
 
 def sort_batch(batch):
-    batch = zip(*batch)
+    batch = list(zip(*batch))
     batch = sorted(batch, key=lambda x: len(x[0]), reverse=True)
-    batch = zip(*batch)
+    batch = list(zip(*batch))
     return batch
 

@@ -1,0 +1,5 @@
+# mypy
+.mypy_cache/
+
+# repo-specific stuff
+corpus/

@@ -22,18 +22,18 @@ from nltk.translate.bleu_score import corpus_bleu, SmoothingFunction
 
 parser = argparse.ArgumentParser(description='Training Attention-based Neural Machine Translation Model')
 # data
-parser.add_argument('--src_vocab', type=str, help='source vocabulary')
-parser.add_argument('--trg_vocab', type=str, help='target vocabulary')
+parser.add_argument('--src_vocab', default='./corpus/ldc_data/zh.voc3.pkl', type=str, help='source vocabulary')
+parser.add_argument('--trg_vocab', default='./corpus/ldc_data/en.voc3.pkl', type=str, help='target vocabulary')
 parser.add_argument('--src_max_len', type=int, default=50, help='maximum length of source')
 parser.add_argument('--trg_max_len', type=int, default=50, help='maximum length of target')
-parser.add_argument('--train_src', type=str, help='source for training')
-parser.add_argument('--train_trg', type=str, help='target for training')
-parser.add_argument('--valid_src', type=str, help='source for validation')
-parser.add_argument('--valid_trg', type=str, nargs='+', help='references for validation')
+parser.add_argument('--train_src', default='corpus/ldc/train.cn-en.zh', type=str, help='source for training')
+parser.add_argument('--train_trg', default='corpus/ldc/train.cn-en.en', type=str, help='target for training')
+parser.add_argument('--valid_src', default='corpus/ldc/nist03/nist03.cn',type=str, help='source for validation')
+parser.add_argument('--valid_trg', default=['corpus/ldc/nist03/nist03.en0', 'corpus/ldc/nist03/nist03.en1','corpus/ldc/nist03/nist03.en2','corpus/ldc/nist03/nist03.en3'],type=str, nargs='+', help='references for validation')
 parser.add_argument('--vfreq', type=int, default=1500, help='frequency for validation')
-parser.add_argument('--eval_script', type=str, help='script for validation')
+parser.add_argument('--eval_script',default='scripts/validate.sh', type=str, help='script for validation')
 # model
-parser.add_argument('--model', type=str, help='the name of model')
+parser.add_argument('--model',default='RNNSearch', type=str, help='the name of model')
 parser.add_argument('--name', type=str, default='', help='the name of checkpoint')
 parser.add_argument('--enc_ninp', type=int, default=620, help='size of source word embedding')
 parser.add_argument('--dec_ninp', type=int, default=620, help='size of target word embedding')
@@ -53,7 +53,8 @@ parser.add_argument('--l2', type=float, default=0, help='L2 regularization')
 parser.add_argument('--grad_clip', type=float, default=1, help='gradient clipping')
 parser.add_argument('--finetuning', action='store_true', help='whether or not fine-tuning')
 parser.add_argument('--decay_lr', action='store_true', help='decay learning rate')
-parser.add_argument('--half_epoch', action='store_true', help='decay learning rate at the beginning of epoch')
+parser.add_argument('--half_epoch', default=True, help='decay learning rate at the beginning of epoch')
+# parser.add_argument('--half_epoch', action='store_true', help='decay learning rate at the beginning of epoch')
 parser.add_argument('--epoch_best', action='store_true', help='store best model for epoch')
 parser.add_argument('--restore', action='store_true', help='decay learning rate at the beginning of epoch')
 parser.add_argument('--beam_size', type=int, default=10, help='size of beam search')
@@ -63,12 +64,13 @@ parser.add_argument('--seed', type=int, default=123, help='random number seed')
 parser.add_argument('--checkpoint', type=str, default='./checkpoint/', help='path to save the model')
 parser.add_argument('--freq', type=int, help='frequency for save')
 # GPU
-parser.add_argument('--cuda', action='store_true', help='use cuda')
-parser.add_argument('--local_rank', type=int, help='use cuda')
+parser.add_argument('--cuda', default=True, help='use cuda')
+# parser.add_argument('--cuda', action='store_true', help='use cuda')
+parser.add_argument('--local_rank',default=0, type=int, help='use cuda')
 # Misc
 parser.add_argument('--nepoch', type=int, default=6, help='number of epochs to train')
 parser.add_argument('--epoch', type=int, default=0, help='epoch of checkpoint')
-parser.add_argument('--info', type=str, help='info of model')
+parser.add_argument('--info', default='RMSprop-half_epoch', type=str, help='info of model')
 
 opt = parser.parse_args()
 print(opt)
@@ -265,7 +267,7 @@ def evaluate(batch_idx, epoch):
     opt.score_list.append((bleu2, batch_idx, epoch))
 
 
-for epoch in xrange(opt.epoch, opt.epoch + opt.nepoch):
+for epoch in range(opt.epoch, opt.epoch + opt.nepoch):
     train(epoch)
     print('-----------------------------------')
     evaluate(len(train_iter), epoch)

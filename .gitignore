@@ -5,4 +5,4 @@ __pycache__/
 # repo-specific stuff
 corpus/
 checkpoint/
-
+generation/

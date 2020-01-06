@@ -26,7 +26,7 @@ class Encoder(nn.Module):
         input = self.enc_emb_dp(self.emb(input))
         length = mask.sum(1).tolist()
         total_length = mask.size(1)
-        input = torch.nn.utils.rnn.pack_padded_sequence(input, length, batch_first=True)
+        input = torch.nn.utils.rnn.pack_padded_sequence(input, length, batch_first=True, enforce_sorted=False)
         output, hidden = self.bi_gru(input, hidden)
         output = torch.nn.utils.rnn.pad_packed_sequence(output, batch_first=True, total_length=total_length)[0]
         output = self.enc_hid_dp(output)
@@ -47,9 +47,10 @@ class Attention(nn.Module):
         attn_h = self.s2s(context.view(-1, shape[2]))
         attn_h = attn_h.view(shape[0], shape[1], -1)
         attn_h += self.h2s(hidden).unsqueeze(1).expand_as(attn_h)
-        logit = self.a2o(F.tanh(attn_h)).view(shape[0], shape[1])
+        logit = self.a2o(torch.tanh(attn_h)).view(shape[0], shape[1])
         if mask.any():
-            logit.data.masked_fill_(1 - mask, -float('inf'))
+            logit.data.masked_fill_((1 - mask).bool(), -float('inf')) # pytorch >= 1.2
+            # logit.data.masked_fill_(1 - mask, -float('inf')) # pytorch < 1.2
         softmax = F.softmax(logit, dim=1)
         output = torch.bmm(softmax.unsqueeze(1), context).squeeze(1)
         return output
@@ -70,7 +71,7 @@ class VallinaDecoder(nn.Module):
         hidden = self.gru1(emb, hidden)
         attn_enc = self.enc_attn(hidden, enc_mask, enc_context)
         hidden = self.gru2(attn_enc, hidden)
-        output = F.tanh(self.e2o(emb) + self.h2o(hidden) + self.c2o(attn_enc))
+        output = torch.tanh(self.e2o(emb) + self.h2o(hidden) + self.c2o(attn_enc))
         output = self.readout_dp(output)
         return output, hidden
 
@@ -101,12 +102,12 @@ class RNNSearch(nn.Module):
 
         attn_mask = src_mask.byte()
 
-        hidden = F.tanh(self.init_affine(avg_enc_context))
+        hidden = torch.tanh(self.init_affine(avg_enc_context))
 
         loss = 0
-        for i in xrange(f_trg.size(1) - 1):
+        for i in range(f_trg.size(1) - 1):
             output, hidden = self.decoder(self.dec_emb_dp(self.emb(f_trg[:, i])), hidden, attn_mask, enc_context)
-            loss += F.cross_entropy(self.affine(output), f_trg[:, i+1], reduce=False) * f_trg_mask[:, i+1]
+            loss += F.cross_entropy(self.affine(output), f_trg[:, i+1], reduction='none') * f_trg_mask[:, i+1]
         w_loss = loss.sum() / f_trg_mask[:, 1:].sum()
         loss = loss.mean()
         return loss.unsqueeze(0), w_loss.unsqueeze(0)
@@ -124,7 +125,7 @@ class RNNSearch(nn.Module):
 
         attn_mask = src_mask.byte()
 
-        hidden = F.tanh(self.init_affine(avg_enc_context))
+        hidden = torch.tanh(self.init_affine(avg_enc_context))
 
         prev_beam = Beam(beam_size)
         prev_beam.candidates = [[self.dec_sos]]
@@ -134,9 +135,9 @@ class RNNSearch(nn.Module):
         valid_size = beam_size
 
         hyp_list = []
-        for k in xrange(max_len):
+        for k in range(max_len):
             candidates = prev_beam.candidates
-            input = src.new_tensor(map(lambda cand: cand[-1], candidates))
+            input = src.new_tensor(list(map(lambda cand: cand[-1], candidates)))
             input = self.dec_emb_dp(self.emb(input))
             output, hidden = self.decoder(input, hidden, attn_mask, enc_context)
             log_prob = F.log_softmax(self.affine(output), dim=1)

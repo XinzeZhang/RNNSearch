@@ -18,7 +18,7 @@ def convert_data(batch, vocab, device, reverse=False, unk=None, pad=None, sos=No
                 list(x) +
                 ([] if eos is None else [eos]))
         padded[-1] = padded[-1] + [pad] * max(0, max_len - len(x))
-        padded[-1] = map(lambda v: vocab['stoi'][v] if v in vocab['stoi'] else vocab['stoi'][unk], padded[-1])
+        padded[-1] = list(map(lambda v: vocab['stoi'][v] if v in vocab['stoi'] else vocab['stoi'][unk], padded[-1]))
     padded = torch.LongTensor(padded).to(device)
     mask = padded.ne(vocab['stoi'][pad]).float()
     return padded, mask
@@ -27,7 +27,7 @@ def convert_data(batch, vocab, device, reverse=False, unk=None, pad=None, sos=No
 def convert_str(batch, vocab):
     output = []
     for x in batch:
-        output.append(map(lambda v: vocab['itos'][v], x))
+        output.append(list(map(lambda v: vocab['itos'][v], x)))
     return output
 
 
@@ -51,3 +51,7 @@ def sort_batch(batch):
     batch = list(zip(*batch))
     return batch
 
+def list_batch(batch):
+    batch = list(zip(*batch))
+    batch = list(zip(*batch))
+    return batch

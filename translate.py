@@ -111,12 +111,12 @@ for ix, batch in enumerate(test_iter, start=1):
         best_hyp, best_score = output[0]
         best_hyp = convert_str([best_hyp], trg_vocab)
         hyp_list.append(best_hyp[0])
-        ref = map(lambda x: x[0], trg_raw)
+        ref = list(map(lambda x: x[0], trg_raw))
         ref_list.append(ref)
     print(ix, len(test_iter), 100. * ix / len(test_iter))
 elapsed = time.time() - start_time
 bleu1 = corpus_bleu(ref_list, hyp_list, smoothing_function=SmoothingFunction().method1)
-hyp_list = map(lambda x: ' '.join(x), hyp_list)
+hyp_list = list(map(lambda x: ' '.join(x), hyp_list))
 p_tmp = tempfile.mktemp()
 f_tmp = open(p_tmp, 'w')
 f_tmp.write('\n'.join(hyp_list))

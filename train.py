@@ -15,10 +15,13 @@ import torch.optim as optim
 import torch.utils.data
 
 from dataset import dataset
-from util import convert_data, invert_vocab, load_vocab, convert_str, sort_batch
+from util import convert_data, invert_vocab, load_vocab, convert_str, sort_batch,list_batch
 
 import model
 from nltk.translate.bleu_score import corpus_bleu, SmoothingFunction
+
+import multiprocessing
+multiprocessing.set_start_method('spawn', True)
 
 parser = argparse.ArgumentParser(description='Training Attention-based Neural Machine Translation Model')
 # data
@@ -111,7 +114,7 @@ opt.dec_ntok = len(trg_vocab['stoi'])
 # load dataset for training and validation
 train_dataset = dataset(opt.train_src, opt.train_trg, opt.src_max_len, opt.trg_max_len)
 valid_dataset = dataset(opt.valid_src, opt.valid_trg)
-train_iter = torch.utils.data.DataLoader(train_dataset, opt.batch_size, shuffle=True, num_workers=4, collate_fn=lambda x: zip(*x))
+train_iter = torch.utils.data.DataLoader(train_dataset, opt.batch_size, shuffle=True, num_workers=0, collate_fn=lambda x: zip(*x))
 valid_iter = torch.utils.data.DataLoader(valid_dataset, 1, shuffle=False, collate_fn=lambda x: zip(*x))
 
 # create the model
@@ -133,7 +136,7 @@ optimizer = getattr(optim, opt.optim)(param_group, lr=opt.lr, weight_decay=opt.l
 
 opt.score_list = []
 opt.epoch_best_score = -float('inf')
-opt.cur_lr = ' '.join(map(lambda g: str(g['lr']), optimizer.param_groups))
+opt.cur_lr = ' '.join(list(map(lambda g: str(g['lr']), optimizer.param_groups)))
 opt.tmp_name = None
 opt.best_name = None
 opt.epoch_best_name = None
@@ -181,9 +184,9 @@ def train(epoch):
         grad_norm = torch.nn.utils.clip_grad_norm_(param_list, opt.grad_clip)
         optimizer.step()
         elapsed = time.time() - start_time
-        R = map(lambda x: str(x.mean().item()), R)
+        R = list(map(lambda x: str(x.mean().item()), R))
         print(epoch, batch_idx, len(train_iter), 100. * batch_idx / len(train_iter),
-              ' '.join(R), grad_norm.item(), opt.cur_lr, elapsed)
+              ' '.join(R), grad_norm, opt.cur_lr, elapsed)
 
         # validation
         if batch_idx % opt.vfreq == 0:
@@ -192,7 +195,7 @@ def train(epoch):
             if opt.decay_lr:
                 adjust_learningrate(opt.score_list)
             if len(opt.score_list) == 1 or \
-                opt.score_list[-1][0] > max(map(lambda x: x[0], opt.score_list[:-1])):
+                opt.score_list[-1][0] > max(list(map(lambda x: x[0], opt.score_list[:-1]))):
                 if opt.best_name is not None:
                     os.remove(os.path.join(opt.checkpoint, opt.best_name))
                 opt.best_name = save_model(model, batch_idx, epoch, 'best')
@@ -245,6 +248,7 @@ def evaluate(batch_idx, epoch):
     ref_list = []
     start_time = time.time()
     for ix, batch in enumerate(valid_iter, start=1):
+        batch = list_batch(batch)
         src_raw = batch[0]
         trg_raw = batch[1:]
         src, src_mask = convert_data(src_raw, src_vocab, device, True, UNK, PAD, SOS, EOS)
@@ -253,11 +257,11 @@ def evaluate(batch_idx, epoch):
             best_hyp, best_score = output[0]
             best_hyp = convert_str([best_hyp], trg_vocab)
             hyp_list.append(best_hyp[0])
-            ref = map(lambda x: x[0], trg_raw)
+            ref = list(map(lambda x: x[0], trg_raw))
             ref_list.append(ref)
     elapsed = time.time() - start_time
     bleu1 = corpus_bleu(ref_list, hyp_list, smoothing_function=SmoothingFunction().method1)
-    hyp_list = map(lambda x: ' '.join(x), hyp_list)
+    hyp_list = list(map(lambda x: ' '.join(x), hyp_list))
     p_tmp = tempfile.mktemp()
     f_tmp = open(p_tmp, 'w')
     f_tmp.write('\n'.join(hyp_list)) 
@@ -275,7 +279,7 @@ for epoch in range(opt.epoch, opt.epoch + opt.nepoch):
     if opt.decay_lr:
         adjust_learningrate(opt.score_list)
     if len(opt.score_list) == 1 or \
-            opt.score_list[-1][0] > max(map(lambda x: x[0], opt.score_list[:-1])):
+            opt.score_list[-1][0] > max(list(map(lambda x: x[0], opt.score_list[:-1]))):
         if opt.best_name is not None:
             os.remove(os.path.join(opt.checkpoint, opt.best_name))
         opt.best_name = save_model(model, len(train_iter), epoch, 'best')
@@ -289,7 +293,7 @@ for epoch in range(opt.epoch, opt.epoch + opt.nepoch):
         for k, group in enumerate(optimizer.param_groups):
             group['lr'] = group['lr'] * 0.5
             cur_lr_list.append(group['lr'])
-        opt.cur_lr = ' '.join(map(lambda v: str(v), cur_lr_list))
+        opt.cur_lr = ' '.join(list(map(lambda v: str(v), cur_lr_list)))
         print('Current learning rate:', opt.cur_lr)
 
 best = max(opt.score_list, key=lambda x: x[0])

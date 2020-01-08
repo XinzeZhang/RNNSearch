@@ -9,23 +9,23 @@ import tempfile
 import torch.utils.data
 
 from dataset import dataset
-from util import convert_data, invert_vocab, load_vocab, convert_str
+from util import convert_data, invert_vocab, load_vocab, convert_str,list_batch
 
 import model
 from nltk.translate.bleu_score import corpus_bleu, SmoothingFunction
 
 parser = argparse.ArgumentParser(description='Testing Attention-based Neural Machine Translation Model')
 # data
-parser.add_argument('--src_vocab', type=str, help='source vocabulary')
-parser.add_argument('--trg_vocab', type=str, help='target vocabulary')
+parser.add_argument('--src_vocab', default='./corpus/ldc_data/zh.voc3.pkl', type=str, help='source vocabulary')
+parser.add_argument('--trg_vocab', default='./corpus/ldc_data/en.voc3.pkl', type=str, help='target vocabulary')
 parser.add_argument('--src_max_len', type=int, default=50, help='maximum length of source')
 parser.add_argument('--trg_max_len', type=int, default=50, help='maximum length of target')
-parser.add_argument('--test_src', type=str, help='source for testing')
-parser.add_argument('--test_trg', type=str, nargs='+', help='reference for testing')
-parser.add_argument('--eval_script', type=str, help='script for validation')
+parser.add_argument('--test_src', default='corpus/ldc/nist08/nist08.cn', type=str, help='source for testing')
+parser.add_argument('--test_trg', default=['corpus/ldc/nist08/nist08.en0', 'corpus/ldc/nist08/nist08.en1','corpus/ldc/nist08/nist08.en2','corpus/ldc/nist08/nist08.en3'], type=str, nargs='+', help='reference for testing')
+parser.add_argument('--eval_script',default='scripts/validate.sh', type=str, help='script for validation')
 # model
-parser.add_argument('--model', type=str, help='name of model')
-parser.add_argument('--name', type=str, help='name of checkpoint')
+parser.add_argument('--model', default='RNNSearch', type=str, help='name of model')
+parser.add_argument('--name', default='model_RNNSearch_RMSprop-half_epoch_lr_5.0e-04_cur_lr_3.125e-05_l2_0.0e+00_batch_80_e4-12000_01-07|21:36.best.pt',type=str, help='name of checkpoint')
 parser.add_argument('--enc_ninp', type=int, default=620, help='size of source word embedding')
 parser.add_argument('--dec_ninp', type=int, default=620, help='size of target word embedding')
 parser.add_argument('--enc_nhid', type=int, default=1000, help='number of source hidden layer')
@@ -43,7 +43,8 @@ parser.add_argument('--seed', type=int, default=123, help='random number seed')
 parser.add_argument('--checkpoint', type=str, default='./checkpoint/', help='path to checkpoint')
 parser.add_argument('--save', type=str, default='./generation/', help='path to save generated sequence')
 # GPU
-parser.add_argument('--cuda', action='store_true', help='use cuda')
+parser.add_argument('--cuda', default=True, help='use cuda')
+# parser.add_argument('--cuda', action='store_true', help='use cuda')
 # Misc
 parser.add_argument('--info', type=str, help='info of the model')
 
@@ -103,6 +104,7 @@ hyp_list = []
 ref_list = []
 start_time = time.time()
 for ix, batch in enumerate(test_iter, start=1):
+    batch = list_batch(batch)
     src_raw = batch[0]
     trg_raw = batch[1:]
     src, src_mask = convert_data(src_raw, src_vocab, device, True, UNK, PAD, SOS, EOS)

@@ -53,6 +53,12 @@ The trainining dataset consists of 1.25M billingual sentence pairs extracted fro
 |:-:|:-:|:-:|:-:|:-:|:-:|:-:|
 |40.16|37.26|40.50|36.67|37.10|28.54|36.01|
 
+Use NIST2003 as tuning set for model selection, and others as test sets. The beam size is set to 10.
+
+|MT02|MT03|MT04|MT05|MT06|MT08|Ave.|
+|:-:|:-:|:-:|:-:|:-:|:-:|:-:|
+|40.08|37.46|40.37|37.47|36.61|28.48| |
+
 ### Acknowledgements
 My implementation utilizes code from the following:
 * [DeepLearnXMU's ABD-NMT repo](https://github.com/DeepLearnXMU/ABD-NMT)

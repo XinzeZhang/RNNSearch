@@ -124,9 +124,13 @@ model = getattr(model, opt.model)(opt).to(device)
 for p in model.parameters():
     p.data.uniform_(-0.1, 0.1)
 
+if not os.path.exists(opt.checkpoint):
+    os.makedirs(opt.checkpoint)
+
 if opt.name:
     state_dict = torch.load(os.path.join(opt.checkpoint, opt.name))
     model.load_state_dict(state_dict)
+
 
 param_list = list(model.parameters())
 param_group = param_list

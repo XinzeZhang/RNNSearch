@@ -120,15 +120,45 @@ def create_dictionary(name, lim=0):
 
     return vocab
 
+def create_bpe_dictionary(name, bpeVocab):
+    global_counter = Counter()
+    
+    fd = open(name)
+    for line in fd:
+        words = line.strip().split()
+        global_counter.update(words)
+
+    combined_counter = global_counter
+    total_counts = sum(combined_counter.values())
+
+    vocab_count = combined_counter.most_common()
+    total_counts = sum(combined_counter.values())
+    print(100.0 * sum([count for word, count in vocab_count]) / total_counts)
+    
+    fv = open(bpeVocab)
+    bpe_vocab_count = []
+    for line in fv:
+        word = line.strip().split(' ')[0]
+        count = int(line.strip().split(' ')[1])
+        bpe_vocab_count.append((word,count))
+
+    print(100.0 * sum([count for word, count in bpe_vocab_count]) / total_counts)
+
+    vocab = {"<unk>": 0, "<pad>": 1, "<sos>": 2, "<eos>": 3}
+
+    for i, (word, count) in enumerate(bpe_vocab_count):
+        vocab[word] = i + 4
+
+    return vocab
 
 def parseargs():
     msg = "build vocabulary"
     parser = argparse.ArgumentParser(description=msg)
 
     msg = "corpus"
-    parser.add_argument("--corpus", default='./corpus/ldc/train.cn-en.zh', help=msg)
+    parser.add_argument("--corpus", default='./corpus/ldc_data/train.en.bpe', help=msg)
     msg = "output"
-    parser.add_argument("--output", default='./corpus/ldc_data/zh.voc3.pkl', help=msg)
+    parser.add_argument("--output", default='./corpus/ldc_data/en.bpe.voc3.pkl', help=msg)
     # parser.add_argument("--corpus", required=True, help=msg)
     # msg = "output"
     # parser.add_argument("--output", required=True, help=msg)
@@ -143,6 +173,7 @@ def parseargs():
     msg = "compatible with groundhog"
     parser.add_argument("--groundhog", default=True, help=msg)
     # parser.add_argument("--groundhog", action="store_true", help=msg)
+    parser.add_argument("--bpe", default=True, help=msg)
 
     return parser.parse_args()
 
@@ -177,9 +208,16 @@ if __name__ == "__main__":
     args = parseargs()
 
     if args.groundhog:
-        vocab = create_dictionary(args.corpus, args.limit)
+        vocab = None
+
+        if args.bpe:
+            args.bpe_vocab = args.corpus+'.vocab'
+            vocab =create_bpe_dictionary(args.corpus, args.bpe_vocab)
+        else:
+            vocab = create_dictionary(args.corpus, args.limit)
+        
         fd = open(args.output, "wb")
         pickle.dump(vocab, fd, pickle.HIGHEST_PROTOCOL)
         fd.close()
-    else:
-        buildvocab(args)
+    # else:
+    #     buildvocab(args)

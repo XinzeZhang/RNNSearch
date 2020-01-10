@@ -8,7 +8,7 @@ import tempfile
 
 import torch.utils.data
 
-from dataset import dataset
+from dataset import dataset, monoset
 from util import convert_data, invert_vocab, load_vocab, convert_str,list_batch
 
 import model
@@ -21,11 +21,20 @@ parser.add_argument('--trg_vocab', default='./corpus/ldc_data/en.voc3.pkl', type
 parser.add_argument('--src_max_len', type=int, default=50, help='maximum length of source')
 parser.add_argument('--trg_max_len', type=int, default=50, help='maximum length of target')
 parser.add_argument('--test_src', default='corpus/ldc/nist08/nist08.cn', type=str, help='source for testing')
-parser.add_argument('--test_trg', default=['corpus/ldc/nist08/nist08.en0', 'corpus/ldc/nist08/nist08.en1','corpus/ldc/nist08/nist08.en2','corpus/ldc/nist08/nist08.en3'], type=str, nargs='+', help='reference for testing')
+parser.add_argument('--test_trg', default=['corpus/ldc/nist08/nist08.en0'], type=str, nargs='+', help='reference for testing')
 parser.add_argument('--eval_script',default='scripts/validate.sh', type=str, help='script for validation')
 # model
 parser.add_argument('--model', default='RNNSearch', type=str, help='name of model')
-parser.add_argument('--name', default='cn-en/best.pt',type=str, help='name of checkpoint')
+parser.add_argument('--fname', default='cn-en/best.pt',type=str, help='name of checkpoint')
+parser.add_argument('--bname', default='en-cn/best.pt',type=str, help='name of checkpoint')
+
+parser.add_argument('--checkpoint', type=str, default='./checkpoint/', help='path to checkpoint')
+parser.add_argument('--save', type=str, default='./generation/', help='path to save generated sequence')
+# GPU
+parser.add_argument('--cuda', default=True, help='use cuda')
+# parser.add_argument('--cuda', action='store_true', help='use cuda')
+parser.add_argument('--verbose', default=False, help='use cuda')
+#---------------------------------------------------------------------------------
 parser.add_argument('--enc_ninp', type=int, default=620, help='size of source word embedding')
 parser.add_argument('--dec_ninp', type=int, default=620, help='size of target word embedding')
 parser.add_argument('--enc_nhid', type=int, default=1000, help='number of source hidden layer')
@@ -40,12 +49,6 @@ parser.add_argument('--readout_dropout', type=float, default=0.3, help='dropout 
 parser.add_argument('--beam_size', type=int, default=10, help='size of beam')
 # bookkeeping
 parser.add_argument('--seed', type=int, default=123, help='random number seed')
-parser.add_argument('--checkpoint', type=str, default='./checkpoint/', help='path to checkpoint')
-parser.add_argument('--save', type=str, default='./generation/', help='path to save generated sequence')
-# GPU
-parser.add_argument('--cuda', default=True, help='use cuda')
-# parser.add_argument('--cuda', action='store_true', help='use cuda')
-parser.add_argument('--verbose', default=False, help='use cuda')
 # Misc
 parser.add_argument('--info', type=str, help='info of the model')
 
@@ -78,19 +81,26 @@ opt.enc_ntok = len(src_vocab['stoi'])
 opt.dec_ntok = len(trg_vocab['stoi'])
 
 # load dataset for testing
-test_dataset = dataset(opt.test_src, opt.test_trg)
-test_iter = torch.utils.data.DataLoader(test_dataset, 1, shuffle=False, collate_fn=lambda x: zip(*x))
+forward_dataset = dataset(opt.test_src, opt.test_trg)
+forward_iter = torch.utils.data.DataLoader(forward_dataset, 1, shuffle=False, collate_fn=lambda x: zip(*x))
 
-# create the model
-model = getattr(model, opt.model)(opt).to(device)
+back_dataset = dataset(opt.test_trg, opt.test_src)
+back_iter = torch.utils.data.DataLoader(back_dataset, 1, shuffle=False, collate_fn=lambda x: zip(*x))
 
-state_dict = torch.load(os.path.join(opt.checkpoint, opt.name))
-model.load_state_dict(state_dict)
-model.eval()
+# create the forward and back translation models
+fmodel = getattr(model, opt.model)(opt).to(device)
+bmodel = getattr(model, opt.model)(opt).to(device)
 
+f_state_dict = torch.load(os.path.join(opt.checkpoint, opt.fname))
+fmodel.load_state_dict(f_state_dict)
+fmodel.eval()
+
+b_state_dict = torch.load(os.path.join(opt.checkpoint, opt.bname))
+bmodel.load_state_dict(b_state_dict)
+bmodel.eval()
 
 def bleu_script(f):
-    ref_stem = opt.test_trg[0][:-1] + '*'
+    ref_stem = opt.test_src
     cmd = '{eval_script} {refs} {hyp}'.format(eval_script=opt.eval_script, refs=ref_stem, hyp=f)
     p = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     out, err = p.communicate()
@@ -104,7 +114,7 @@ def bleu_script(f):
 hyp_list = []
 ref_list = []
 start_time = time.time()
-for ix, batch in enumerate(test_iter, start=1):
+for ix, batch in enumerate(forward_iter, start=1):
     batch = list_batch(batch)
     src_raw = batch[0]
     trg_raw = batch[1:]
@@ -117,7 +127,7 @@ for ix, batch in enumerate(test_iter, start=1):
         ref = list(map(lambda x: x[0], trg_raw))
         ref_list.append(ref)
     if opt.verbose:
-        print(ix, len(test_iter), 100. * ix / len(test_iter))
+        print(ix, len(forward_iter), 100. * ix / len(forward_iter))
 elapsed = time.time() - start_time
 bleu1 = corpus_bleu(ref_list, hyp_list, smoothing_function=SmoothingFunction().method1)
 hyp_list = list(map(lambda x: ' '.join(x), hyp_list))
@@ -126,4 +136,4 @@ f_tmp = open(p_tmp, 'w')
 f_tmp.write('\n'.join(hyp_list))
 f_tmp.close()
 bleu2 = bleu_script(p_tmp)
-print('BLEU score for model {} is {}/{}, {}'.format(opt.name, bleu1, bleu2, elapsed))
+print('BLEU score for model {} is {}/{}, {}'.format(opt.fname, bleu1, bleu2, elapsed))

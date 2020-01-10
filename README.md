@@ -46,7 +46,13 @@ The evaluation metric for Chinese-English we use is case-insensitive BLEU. We us
 ```
 perl scripts/multi-bleu.perl -lc corpus/nist03/nist03.en < nist03.translated
 ```
-### Results on Chinese-English translation
+### Results 
+Sentences of NIST testing sets:
+|MT02|MT03|MT04|MT05|MT06|MT08|Ave.|
+|:-:|:-:|:-:|:-:|:-:|:-:|:-:|
+|878|919|1788|1082|1664|1357|7688|
+
+#### Results on Chinese-English translation
 The trainining dataset consists of 1.25M billingual sentence pairs extracted from LDC corpora. Use NIST 2002(MT02) as tuning set for hyper-parameter optimization and model selection, and NIST 2003(MT03), 2004 (MT04), 2005(MT05), 2006(MT06) and 2008(MT08) as test sets. The beam size is set to 10.
 
 |MT02|MT03|MT04|MT05|MT06|MT08|Ave.|
@@ -59,10 +65,13 @@ Use NIST2003 as tuning set for model selection, and others as test sets. The bea
 |:-:|:-:|:-:|:-:|:-:|:-:|:-:|
 |40.08|37.46|40.37|37.47|36.61|28.48|36.85|
 
-Sentences of NIST testing sets:
+#### Results on English-Chinese translation
+
+Use NIST2003 as tuning set for model selection, and others as test sets. The beam size is set to 10.
+
 |MT02|MT03|MT04|MT05|MT06|MT08|Ave.|
 |:-:|:-:|:-:|:-:|:-:|:-:|:-:|
-|878|919|1788|1082|1664|1357|7688|
+|25.43|19.49|19.69|17.32|18.91|14.96|19.2|
 
 ### Acknowledgements
 My implementation utilizes code from the following:

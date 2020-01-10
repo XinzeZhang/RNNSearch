@@ -30,6 +30,13 @@ def convert_str(batch, vocab):
         output.append(list(map(lambda v: vocab['itos'][v], x)))
     return output
 
+def listToString(s):  
+    
+    # initialize an empty string 
+    s1 = " " 
+    _s = s1.join(s).strip()
+    # return string   
+    return _s
 
 def invert_vocab(vocab):
     v = {}

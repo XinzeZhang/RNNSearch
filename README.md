@@ -57,7 +57,12 @@ Use NIST2003 as tuning set for model selection, and others as test sets. The bea
 
 |MT02|MT03|MT04|MT05|MT06|MT08|Ave.|
 |:-:|:-:|:-:|:-:|:-:|:-:|:-:|
-|40.08|37.46|40.37|37.47|36.61|28.48| |
+|40.08|37.46|40.37|37.47|36.61|28.48|36.85|
+
+Sentences of NIST testing sets:
+|MT02|MT03|MT04|MT05|MT06|MT08|Ave.|
+|:-:|:-:|:-:|:-:|:-:|:-:|:-:|
+|878|919|1788|1082|1664|1357|7688|
 
 ### Acknowledgements
 My implementation utilizes code from the following:

@@ -45,6 +45,7 @@ parser.add_argument('--save', type=str, default='./generation/', help='path to s
 # GPU
 parser.add_argument('--cuda', default=True, help='use cuda')
 # parser.add_argument('--cuda', action='store_true', help='use cuda')
+parser.add_argument('--verbose', default=False, help='use cuda')
 # Misc
 parser.add_argument('--info', type=str, help='info of the model')
 
@@ -115,7 +116,8 @@ for ix, batch in enumerate(test_iter, start=1):
         hyp_list.append(best_hyp[0])
         ref = list(map(lambda x: x[0], trg_raw))
         ref_list.append(ref)
-    print(ix, len(test_iter), 100. * ix / len(test_iter))
+    if opt.verbose:
+        print(ix, len(test_iter), 100. * ix / len(test_iter))
 elapsed = time.time() - start_time
 bleu1 = corpus_bleu(ref_list, hyp_list, smoothing_function=SmoothingFunction().method1)
 hyp_list = list(map(lambda x: ' '.join(x), hyp_list))

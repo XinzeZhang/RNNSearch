@@ -1,5 +1,6 @@
 import jieba
-jieba.enable_paddle()
+import os
+# jieba.enable_paddle()
 # jieba.load_userdict("corpus/ldc/vocab.cn.txt")
 
 def line2jieba(src_path, save_path):
@@ -17,6 +18,18 @@ def line2jieba(src_path, save_path):
 
     with open(save_path, mode='w') as f:
         for s in char:
+            f.write(s.strip() + '\n')
+    print('Save translation to '+save_path + ' Successfully!')   
+
+def line2raw(src_path, save_path):
+    src = []
+    with open(src_path, encoding='utf-8') as f:
+        for l in f:
+            l = l.strip().replace(' ', '')
+            src.append(l)
+
+    with open(save_path, mode='w') as f:
+        for s in src:
             f.write(s.strip() + '\n')
     print('Save translation to '+save_path + ' Successfully!')   
     
@@ -111,10 +124,18 @@ class docPre():
 
 if __name__ == "__main__":
     nistSets = ['nist02','nist03', 'nist04','nist05', 'nist06', 'nist08']
-    # nistSets = [ 'nist02','nist03', 'nist04','nist05', ]
 
+    corpus_folder = 'generation/baidu_new/'
+    # raw_folder = 'corpus/ldc/'
     for iNist in nistSets:
-        pre = docPre(nist=iNist)
-        pre.pair_pre()
+    #     pre = docPre(nist=iNist)
+    #     pre.pair_pre()
 
-    
+
+        corpus = corpus_folder + iNist + '/' + iNist +'.baidu.raw.cn'
+        
+        jbPath = corpus_folder + iNist + '/' + iNist + '.baidu.jieba.cn'
+
+        line2jieba(corpus, jbPath)
+
+

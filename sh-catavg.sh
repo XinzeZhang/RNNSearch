@@ -51,3 +51,12 @@ corpus/ldc_data/nist05/nist05.clean.en3 \
 corpus/ldc_data/nist06/nist06.clean.en3 \
 corpus/ldc_data/nist08/nist08.clean.en3 > \
 corpus/ldc_data/avg/avg.clean.en3
+
+cat \
+generation/baidu/nist02/nist02.baidu.raw.cn \
+generation/baidu/nist03/nist03.baidu.raw.cn \
+generation/baidu/nist04/nist04.baidu.raw.cn \
+generation/baidu/nist05/nist05.baidu.raw.cn \
+generation/baidu/nist06/nist06.baidu.raw.cn \
+generation/baidu/nist08/nist08.baidu.raw.cn > \
+generation/baidu/avg/avg.baidu.raw.cn

@@ -9,7 +9,7 @@ import tempfile
 import torch.utils.data
 
 from dataset import dataset, monoset
-from util import convert_data, invert_vocab, load_vocab, convert_str,list_batch, listToString
+from RNNsearch.util import convert_data, invert_vocab, load_vocab, convert_str,list_batch, listToString
 
 import model
 from nltk.translate.bleu_score import corpus_bleu, SmoothingFunction

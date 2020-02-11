@@ -59,30 +59,55 @@ def files2eval(r, p):
 
 
 if __name__ == "__main__":
-    opt = parser.parse_args()
+    # opt = parser.parse_args()
 
-    testset=opt.test
-    pair = opt.pair
-    max_len = opt.len
-    token = opt.token
-    gpuid = opt.gpuid
+    testsets = ['nist02','nist03','nist04','nist05','nist06','nist08','avg',]
+    testsets = ['nist02','nist03']
 
+    # pair = opt.pair
+    pair = 'cn-en'
+    pair = 'en-cn'
     src = pair.split('-')[0]
     tgt = pair.split('-')[1]
 
-    testsets = ['nist02','nist03','nist04','nist05','nist06','nist08','avg',]
+    models=['rnn','bing','baidu','google']
+    # models=['rnn']
+    
+    if src != tgt:
+        if tgt == 'cn':
+            for nist in testsets:
+                print(50*'-'+nist +'-'*50)
+                for model in models:
+                    ref_path1 = 'corpus/ldc_data/'+nist+'/'+nist+'.clean.pkuseg.cn'
+                    # ref_path2 = 'corpus/ldc_data/'+nist+'/'+nist+'.clean.jieba.cn'
+                    # ref_path3 = 'corpus/ldc_data/'+nist+'/'+nist+'.clean.cn'
+                    hyp_path = 'generation/{}/'.format(model)+nist+'/'+nist+'.{}.pkuseg.cn'.format(model)
 
-    for nist in testsets:
-        ref_path1 = 'corpus/ldc_data/'+nist+'/'+nist+'.clean.pkuseg.cn'
-        ref_path2 = 'corpus/ldc_data/'+nist+'/'+nist+'.clean.jieba.cn'
-        ref_path3 = 'corpus/ldc_data/'+nist+'/'+nist+'.clean.cn'
-        hyp_path = 'generation/baidu/'+nist+'/'+nist+'.baidu.pkuseg.cn'
-                   
-        
-        bleu0 = bleu_script(ref_path1+' '+ ref_path2 + ' ' + ref_path3,hyp_path)
-        print('BLEU score of baidu for the {} is {:.2f}'.format(nist,bleu0))
-        # bleu1, bleu2 = files2eval(ref_path1,hyp_path)
-        # print('BLEU score of baidu for the {} is {:.2f}/{:.2f}/{:.2f}'.format(nist,bleu0,bleu1,bleu2))
+                    # bleu0 = bleu_script(ref_path1+' '+ ref_path2 + ' ' + ref_path3,hyp_path)
+                    bleu0 = bleu_script(ref_path1,hyp_path)
+                    # print('BLEU score of baidu for the {} is {:.2f}'.format(nist,bleu0))
+                    bleu1, bleu2 = files2eval(ref_path1,hyp_path)
+                    print('BLEU score of {} for the {} is {:.2f}/{:.2f}'.format(model,nist,bleu0,bleu1))
+                    # print('BLEU score of {} for the {} is {:.2f}/{:.2f}/{:.2f}'.format(model,nist,bleu0,bleu1,bleu2))
+        elif tgt=='en':
+            for nist in testsets:
+                print(50*'-'+nist +'-'*50)
+                for model in models:
+                    ref_path = 'corpus/ldc_data/'+nist+'/'+nist+'.clean.en'
+                    ref_path0 = ref_path+'0'
+                    ref_path1 = ref_path+'1'
+                    ref_path2 = ref_path+'2'
+                    ref_path3 = ref_path+'3'
+                    hyp_path = 'generation/{}/'.format(model)+nist+'/'+nist+'.{}.raw.en'.format(model)
+                            
+                    
+                    bleu0 = bleu_script(ref_path0+' '+ref_path1+' '+ ref_path2 + ' ' + ref_path3,hyp_path)
+                    # bleu0 = bleu_script(ref_path1,hyp_path)
+                    # print('BLEU score of baidu for the {} is {:.2f}'.format(nist,bleu0))
+                    bleu1, bleu2 = files2eval(ref_path1,hyp_path)
+                    print('BLEU score of {} for the {} is {:.2f}/{:.2f}'.format(model,nist,bleu0,bleu1))
+                    # print('BLEU score of {} for the {} is {:.2f}/{:.2f}/{:.2f}'.format(model,nist,bleu0,bleu1,bleu2))
+
 
 
     # if token == 'word':

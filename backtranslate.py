@@ -8,10 +8,10 @@ import tempfile
 
 import torch.utils.data
 
-from dataset import dataset, monoset
+from RNNsearch.dataset import dataset, monoset
 from RNNsearch.util import convert_data, invert_vocab, load_vocab, convert_str,list_batch, listToString
 
-import model
+from RNNsearch import model
 from nltk.translate.bleu_score import corpus_bleu, SmoothingFunction
 
 from datetime import timedelta
@@ -22,8 +22,8 @@ parser.add_argument('--src_vocab', default='./corpus/ldc_data/cn.voc3.pkl', type
 parser.add_argument('--trg_vocab', default='./corpus/ldc_data/en.voc3.pkl', type=str, help='target vocabulary')
 parser.add_argument('--src_max_len', type=int, default=50, help='maximum length of source')
 parser.add_argument('--trg_max_len', type=int, default=50, help='maximum length of target')
-parser.add_argument('--test_src', default='corpus/ldc/nist02/nist02.cn', type=str, help='source for testing')
-parser.add_argument('--test_trg', default='corpus/ldc/nist02/nist02.en0', type=str, help='reference for testing')
+parser.add_argument('--test_src', default='corpus/ldc_data/nist02/nist02.clean.pkuseg.cn', type=str, help='source for testing')
+parser.add_argument('--test_trg', default='corpus/ldc_data/nist02/nist02.clean.en0', type=str, help='reference for testing')
 parser.add_argument('--eval_script',default='scripts/validate.sh', type=str, help='script for validation')
 # model
 parser.add_argument('--model', default='RNNSearch', type=str, help='name of model')
@@ -35,7 +35,7 @@ parser.add_argument('--save', type=str, default='./generation/', help='path to s
 # GPU
 parser.add_argument('--cuda', default=True, help='use cuda')
 # parser.add_argument('--cuda', action='store_true', help='use cuda')
-parser.add_argument('--verbose', default=False, help='show translation')
+parser.add_argument('--verbose', default=True, help='show translation')
 #---------------------------------------------------------------------------------
 parser.add_argument('--enc_ninp', type=int, default=620, help='size of source word embedding')
 parser.add_argument('--dec_ninp', type=int, default=620, help='size of target word embedding')
@@ -94,11 +94,11 @@ back_iter = torch.utils.data.DataLoader(back_dataset, 1, shuffle=False, collate_
 fmodel = getattr(model, opt.model)(opt).to(device)
 bmodel = getattr(model, opt.model)(opt).to(device)
 
-f_state_dict = torch.load(os.path.join(opt.checkpoint, opt.fname))
+f_state_dict = torch.load(os.path.join(opt.checkpoint, opt.fname),map_location=device)
 fmodel.load_state_dict(f_state_dict)
 fmodel.eval()
 
-b_state_dict = torch.load(os.path.join(opt.checkpoint, opt.bname))
+b_state_dict = torch.load(os.path.join(opt.checkpoint, opt.bname),map_location=device)
 bmodel.load_state_dict(b_state_dict)
 bmodel.eval()
 
@@ -148,7 +148,7 @@ for ix, batch in enumerate(forward_iter, start=1):
     if opt.verbose:
 
         print(50*'-')
-        print(ix, len(forward_iter), 100. * ix / len(forward_iter))
+        print('Sentence: {} \t Total: {} \t Percent: {:.2f}'.format(ix, len(forward_iter), 100. * ix / len(forward_iter)))
         print('Src: ' + listToString(ref))
         print('==>')
         print('Pred: ' + listToString(pred))
@@ -164,5 +164,5 @@ f_tmp.write('\n'.join(back_list))
 f_tmp.close()
 bleu2 = bleu_script(p_tmp)
 
-fElapsed = str(timedelta(int(elapsed)))
+fElapsed = str(timedelta(float(elapsed)))
 print('BLEU score for model {} is {:.2f}/{}, {}'.format(opt.fname, bleu1, bleu2, fElapsed))

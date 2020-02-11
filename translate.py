@@ -8,10 +8,10 @@ import tempfile
 
 import torch.utils.data
 
-from dataset import dataset
-from util import convert_data, invert_vocab, load_vocab, convert_str,list_batch
+from RNNsearch.dataset import dataset
+from RNNsearch.util import convert_data, invert_vocab, load_vocab, convert_str,list_batch
+from RNNsearch import model
 
-import model
 from nltk.translate.bleu_score import corpus_bleu, SmoothingFunction
 
 parser = argparse.ArgumentParser(description='Testing Attention-based Neural Machine Translation Model')
@@ -20,8 +20,8 @@ parser.add_argument('--src_vocab', default='./corpus/ldc_data/cn.voc3.pkl', type
 parser.add_argument('--trg_vocab', default='./corpus/ldc_data/en.voc3.pkl', type=str, help='target vocabulary')
 parser.add_argument('--src_max_len', type=int, default=50, help='maximum length of source')
 parser.add_argument('--trg_max_len', type=int, default=50, help='maximum length of target')
-parser.add_argument('--test_src', default='corpus/ldc/nist08/nist08.cn', type=str, help='source for testing')
-parser.add_argument('--test_trg', default=['corpus/ldc/nist08/nist08.en0', 'corpus/ldc/nist08/nist08.en1','corpus/ldc/nist08/nist08.en2','corpus/ldc/nist08/nist08.en3'], type=str, nargs='+', help='reference for testing')
+parser.add_argument('--test_src', default='corpus/ldc/nist02/nist02.cn', type=str, help='source for testing')
+parser.add_argument('--test_trg', default=['corpus/ldc/nist02/nist02.en0', 'corpus/ldc/nist02/nist02.en1','corpus/ldc/nist02/nist02.en2','corpus/ldc/nist02/nist02.en3'], type=str, nargs='+', help='reference for testing')
 parser.add_argument('--eval_script',default='scripts/validate.sh', type=str, help='script for validation')
 # model
 parser.add_argument('--model', default='RNNSearch', type=str, help='name of model')
@@ -43,9 +43,9 @@ parser.add_argument('--seed', type=int, default=123, help='random number seed')
 parser.add_argument('--checkpoint', type=str, default='./checkpoint/', help='path to checkpoint')
 parser.add_argument('--save', type=str, default='./generation/', help='path to save generated sequence')
 # GPU
-parser.add_argument('--cuda', default=True, help='use cuda')
+parser.add_argument('--cuda', default=False, help='use cuda')
 # parser.add_argument('--cuda', action='store_true', help='use cuda')
-parser.add_argument('--verbose', default=False, help='use cuda')
+parser.add_argument('--verbose', default=True, help='show info')
 # Misc
 parser.add_argument('--info', type=str, help='info of the model')
 
@@ -84,7 +84,7 @@ test_iter = torch.utils.data.DataLoader(test_dataset, 1, shuffle=False, collate_
 # create the model
 model = getattr(model, opt.model)(opt).to(device)
 
-state_dict = torch.load(os.path.join(opt.checkpoint, opt.name))
+state_dict = torch.load(os.path.join(opt.checkpoint, opt.name),map_location=device)
 model.load_state_dict(state_dict)
 model.eval()
 
@@ -113,11 +113,12 @@ for ix, batch in enumerate(test_iter, start=1):
         output = model.beamsearch(src, src_mask, opt.beam_size, normalize=True)
         best_hyp, best_score = output[0]
         best_hyp = convert_str([best_hyp], trg_vocab)
-        hyp_list.append(best_hyp[0])
+        pred = best_hyp[0]
+        hyp_list.append(pred)
         ref = list(map(lambda x: x[0], trg_raw))
         ref_list.append(ref)
     if opt.verbose:
-        print(ix, len(test_iter), 100. * ix / len(test_iter))
+        print('Sentence: {} \t Total: {} \t Percent: {:.2f}'.format(ix, len(test_iter), 100. * ix / len(test_iter)))
 elapsed = time.time() - start_time
 bleu1 = corpus_bleu(ref_list, hyp_list, smoothing_function=SmoothingFunction().method1)
 hyp_list = list(map(lambda x: ' '.join(x), hyp_list))

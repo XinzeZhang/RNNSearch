@@ -1,7 +1,9 @@
 import pickle
 
 import torch
+import time
 
+import pkuseg
 
 def convert_data(batch, vocab, device, reverse=False, unk=None, pad=None, sos=None, eos=None):
     max_len = max(len(x) for x in batch)
@@ -62,3 +64,38 @@ def list_batch(batch):
     batch = list(zip(*batch))
     batch = list(zip(*batch))
     return batch
+
+
+def asMinutes(s):
+    m = math.floor(s / 60)
+    s -= m * 60
+    return '%dm %ds' % (m, s)
+
+# time-count
+
+
+def timeSince(since, percent):
+    now = time.time()
+    s = now - since
+    es = s / (percent)
+    rs = es - s
+    return '%s (- %s)' % (asMinutes(s), asMinutes(rs))
+
+def line2seg(src_path, save_path):
+    seg = pkuseg.pkuseg() 
+    src = []
+    char = []
+    with open(src_path, encoding='utf-8') as f:
+        for l in f:
+            l = l.strip().replace(' ', '').lower()
+            charL = ' '.join(seg.cut(l))
+            charL = charL.strip()
+            src.append(l)
+            char.append(charL)
+
+    assert len(src) == len(char)
+
+    with open(save_path, mode='w') as f:
+        for s in char:
+            f.write(s.strip() + '\n')
+    print('Save translation to '+save_path + ' Successfully!')

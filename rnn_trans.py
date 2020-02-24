@@ -12,8 +12,6 @@ from RNNsearch.dataset import dataset
 from RNNsearch.util import convert_data, invert_vocab, load_vocab, convert_str,list_batch,listToString,line2seg
 from RNNsearch import model
 
-from nltk.translate.bleu_score import corpus_bleu, SmoothingFunction
-
 class rnn_translator():
     def __init__(self, src_lang, tgt_lang):
         if tgt_lang == 'zh':
@@ -42,7 +40,7 @@ class rnn_translator():
 
         self.beam_size=10
         self.seed =123
-        self.checkpoint='./checkpoint/'
+        self.checkpoint='./RNNSearch/checkpoint/'
         self.model_direction = src_lang +'-' + tgt_lang +'/best.pt'
         
         self.cuda=False

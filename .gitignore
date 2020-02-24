@@ -6,5 +6,5 @@ __pycache__/
 
 # repo-specific stuff
 corpus/
-checkpoint/
+RNNsearch/checkpoint/
 generation/

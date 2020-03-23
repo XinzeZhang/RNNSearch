@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from .beam import Beam
+from RNNSearch.beam import Beam
 
 
 class Encoder(nn.Module):

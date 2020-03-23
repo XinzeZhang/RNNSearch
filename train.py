@@ -14,10 +14,10 @@ import torch.optim as optim
 
 import torch.utils.data
 
-from dataset import dataset
-from util import convert_data, invert_vocab, load_vocab, convert_str, sort_batch,list_batch
+from RNNSearch.dataset import dataset
+from RNNSearch.util import convert_data, invert_vocab, load_vocab, convert_str, sort_batch,list_batch
 
-import model
+from RNNSearch.model import RNNSearch
 from nltk.translate.bleu_score import corpus_bleu, SmoothingFunction
 
 import multiprocessing
@@ -89,7 +89,7 @@ if opt.cuda:
 
 device_type= 'cuda' if opt.cuda else 'cpu'
 device_ids = None
-if opt.local_rank is not None:
+if opt.local_rank is not None and device_type is not 'cpu':
     device_type += ':' + str(opt.local_rank)
     device_ids = [opt.local_rank]
 device = torch.device(device_type)
@@ -118,7 +118,7 @@ train_iter = torch.utils.data.DataLoader(train_dataset, opt.batch_size, shuffle=
 valid_iter = torch.utils.data.DataLoader(valid_dataset, 1, shuffle=False, collate_fn=lambda x: zip(*x))
 
 # create the model
-model = getattr(model, opt.model)(opt).to(device)
+model = RNNSearch(opt).to(device)
 
 # initialize the parameters
 for p in model.parameters():
@@ -128,7 +128,7 @@ if not os.path.exists(opt.checkpoint):
     os.makedirs(opt.checkpoint)
 
 if opt.name:
-    state_dict = torch.load(os.path.join(opt.checkpoint, opt.name))
+    state_dict = torch.load(os.path.join(opt.checkpoint, opt.name),map_location=device)
     model.load_state_dict(state_dict)
 
 

@@ -14,10 +14,10 @@ import torch.optim as optim
 
 import torch.utils.data
 
-from RNNSearch.dataset import dataset
-from RNNSearch.util import convert_data, invert_vocab, load_vocab, convert_str, sort_batch,list_batch
+from RNNsearch.dataset import dataset
+from RNNsearch.util import convert_data, invert_vocab, load_vocab, convert_str, sort_batch,list_batch
 
-from RNNSearch.model import RNNSearch
+from RNNsearch.model import RNNSearch
 from nltk.translate.bleu_score import corpus_bleu, SmoothingFunction
 
 import multiprocessing
@@ -36,7 +36,7 @@ parser.add_argument('--valid_trg', default=['corpus/ldc/nist03/nist03.en0', 'cor
 parser.add_argument('--vfreq', type=int, default=1500, help='frequency for validation')
 parser.add_argument('--eval_script',default='scripts/validate.sh', type=str, help='script for validation')
 # model
-parser.add_argument('--model',default='RNNSearch', type=str, help='the name of model')
+parser.add_argument('--model',default='RNNsearch', type=str, help='the name of model')
 parser.add_argument('--name', type=str, default='', help='the name of checkpoint')
 parser.add_argument('--enc_ninp', type=int, default=620, help='size of source word embedding')
 parser.add_argument('--dec_ninp', type=int, default=620, help='size of target word embedding')

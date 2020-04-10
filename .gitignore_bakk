@@ -1,0 +1,10 @@
+# mypy
+.mypy_cache/
+__pycache__/
+
+.vscode/
+
+# repo-specific stuff
+corpus/
+RNNsearch/checkpoint/
+generation/
